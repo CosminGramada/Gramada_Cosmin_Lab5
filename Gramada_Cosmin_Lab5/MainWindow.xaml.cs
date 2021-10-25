@@ -63,24 +63,37 @@ namespace Gramada_Cosmin_Lab5
             BindDataGrid();
         }
 
-        private void btnSave_Click(object sender, RoutedEventArgs e)
+        private void CustomerDataGrid_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
+        {
+            btnEdit.IsEnabled = true;
+            btnDelete.IsEnabled = true;
+            firstNameTextBox.IsEnabled = false;
+            lastNameTextBox.IsEnabled = false;
+        }
+
+        private void SaveCustomer_Click(object sender, RoutedEventArgs e)
         {
             Customer customer = null;
             if (action == ActionState.New)
             {
                 try
                 {
+                    var firstName = firstNameTextBox.Text.Trim();
+                    var lastName = lastNameTextBox.Text.Trim();
+
                     //instantiem Customer entity
                     customer = new Customer()
                     {
-                        FirstName = firstNameTextBox.Text.Trim(),
-                        LastName = lastNameTextBox.Text.Trim()
+                        FirstName = firstName,
+                        LastName = lastName
                     };
+                    
                     //adaugam entitatea nou creata in context
                     ctx.Customers.Add(customer);
-                    customerViewSource.View.Refresh();
+
                     //salvam modificarile
                     ctx.SaveChanges();
+                    customerViewSource.View.Refresh();
                 }
                 //using System.Data;
                 catch (DataException ex)
@@ -99,6 +112,10 @@ namespace Gramada_Cosmin_Lab5
                     ctx.SaveChanges();
                 }
                 catch (DataException ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                catch (Exception ex)
                 {
                     MessageBox.Show(ex.Message);
                 }
@@ -121,14 +138,59 @@ namespace Gramada_Cosmin_Lab5
                 }
                 customerViewSource.View.Refresh();
             }
-            SetValidationBinding();
+            customerDataGrid.UnselectAllCells();
+            tbCtrlAutoLot.Items.Refresh();
+
+            firstNameTextBox.IsEnabled = false;
+            lastNameTextBox.IsEnabled = false;
+            btnEdit.IsEnabled = false;
+            btnDelete.IsEnabled = false;
+            action = ActionState.Nothing;
         }
 
-        private void btnEdit_Click(object sender, RoutedEventArgs e)
+        private void NewCustomer_Click(object sender, RoutedEventArgs e)
+        {
+            action = ActionState.New;
+
+            customerDataGrid.UnselectAllCells();
+            tbCtrlAutoLot.Items.Refresh();
+
+            //Clear the content of the textboxes and enable first and last name
+            SetValidationBinding();
+            custIdTextBox.Clear();
+            firstNameTextBox.Clear();
+            lastNameTextBox.Clear();
+            firstNameTextBox.IsEnabled = true;
+            lastNameTextBox.IsEnabled = true;
+            
+        }
+
+        private void CancelCustomer_Click(object sender, RoutedEventArgs e)
+        {
+            action = ActionState.Nothing;
+
+            customerDataGrid.UnselectAllCells();
+            tbCtrlAutoLot.Items.Refresh();
+            
+            //Clear the content of the textboxes and disable first and last name
+            custIdTextBox.Clear();
+            firstNameTextBox.Clear();
+            lastNameTextBox.Clear();
+            firstNameTextBox.IsEnabled = false;
+            lastNameTextBox.IsEnabled = false;
+            btnEdit.IsEnabled = false;
+            btnDelete.IsEnabled = false;
+
+            customerViewSource.View.Refresh();
+        }
+
+        private void EditCustomer_Click(object sender, RoutedEventArgs e)
         {
             action = ActionState.Edit;
             BindingOperations.ClearBinding(firstNameTextBox, TextBox.TextProperty);
             BindingOperations.ClearBinding(lastNameTextBox, TextBox.TextProperty);
+            firstNameTextBox.IsEnabled = true;
+            lastNameTextBox.IsEnabled = true;
             SetValidationBinding();
         }
 
@@ -143,6 +205,7 @@ namespace Gramada_Cosmin_Lab5
 
         private void btnSaveInventory_Click(object sender, RoutedEventArgs e)
         {
+            action = ActionState.New;
             Inventory inventory = null;
             if (action == ActionState.New)
             {
@@ -304,28 +367,30 @@ namespace Gramada_Cosmin_Lab5
 
         private void SetValidationBinding()
         {
-            Binding firstNameValidationBinding = new Binding();
-            firstNameValidationBinding.Source = customerViewSource;
-            firstNameValidationBinding.Path = new PropertyPath("FirstName");
-            firstNameValidationBinding.NotifyOnValidationError = true;
-            firstNameValidationBinding.Mode = BindingMode.TwoWay;
-            firstNameValidationBinding.UpdateSourceTrigger =
-           UpdateSourceTrigger.PropertyChanged;
+            Binding firstNameValidationBinding = new Binding
+            {
+                Source = customerViewSource,
+                Path = new PropertyPath("FirstName"),
+                NotifyOnValidationError = true,
+                Mode = BindingMode.TwoWay,
+                UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+            };
+
             //string required
             firstNameValidationBinding.ValidationRules.Add(new StringNotEmpty());
-            firstNameTextBox.SetBinding(TextBox.TextProperty,
-           firstNameValidationBinding);
-            Binding lastNameValidationBinding = new Binding();
-            lastNameValidationBinding.Source = customerViewSource;
-            lastNameValidationBinding.Path = new PropertyPath("LastName");
-            lastNameValidationBinding.NotifyOnValidationError = true;
-            lastNameValidationBinding.Mode = BindingMode.TwoWay;
-            lastNameValidationBinding.UpdateSourceTrigger =
-           UpdateSourceTrigger.PropertyChanged;
+            firstNameTextBox.SetBinding(TextBox.TextProperty, firstNameValidationBinding);
+            Binding lastNameValidationBinding = new Binding
+            {
+                Source = customerViewSource,
+                Path = new PropertyPath("LastName"),
+                NotifyOnValidationError = true,
+                Mode = BindingMode.TwoWay,
+                UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+            };
+
             //string min length validator
             lastNameValidationBinding.ValidationRules.Add(new StringMinLengthValidator());
-            lastNameTextBox.SetBinding(TextBox.TextProperty,
-           lastNameValidationBinding); //setare binding nou
+            lastNameTextBox.SetBinding(TextBox.TextProperty, lastNameValidationBinding); //setare binding nou
         }
     }
 }
